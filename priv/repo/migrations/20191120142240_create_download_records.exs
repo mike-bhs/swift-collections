@@ -6,6 +6,7 @@ defmodule SwiftCollections.Repo.Migrations.CreateDownloadRecords do
       add :id, :string, size: 36, null: false, primary_key: true
       add :filename, :string, null: false
       add :file_hash, :string, null: false
+      add :content, :text, null: false
 
       timestamps inserted_at: :created_at
     end

@@ -4,11 +4,19 @@ defmodule SwiftCollections.DownloadRecords.Create do
 
   @spec create(String.t(), String.t()) ::
           {:ok, DownloadRecord.t()}
-          | {:error, Ecto.Changeset.t()}
+          | {:error, any()}
           | {:error, :duplicate_record, String.t()}
   def create(filename, file_content) do
+    try do
+      perform_create(filename, file_content)
+    rescue
+      error -> {:error, error}
+    end
+  end
+
+  defp perform_create(filename, file_content) do
     file_hash = calculate_hash(file_content)
-    changeset = DownloadRecord.create_changeset(filename, file_hash)
+    changeset = DownloadRecord.create_changeset(filename, file_hash, file_content)
 
     case SwiftCollections.Repo.insert(changeset) do
       {:ok, record} ->

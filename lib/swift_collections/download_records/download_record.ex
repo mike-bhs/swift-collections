@@ -3,6 +3,7 @@ defmodule SwiftCollections.DownloadRecords.DownloadRecord do
           id: Ecto.UUID.t() | nil,
           filename: String.t(),
           file_hash: String.t(),
+          content: String.t(),
           updated_at: DateTime.t() | nil,
           created_at: DateTime.t() | nil
         }
@@ -15,6 +16,7 @@ defmodule SwiftCollections.DownloadRecords.DownloadRecord do
   schema "download_records" do
     field(:filename, :string)
     field(:file_hash, :string)
+    field(:content, :string)
 
     timestamps(inserted_at: :created_at)
   end
@@ -24,10 +26,10 @@ defmodule SwiftCollections.DownloadRecords.DownloadRecord do
     SwiftCollections.Repo.get_by(__MODULE__, filename: name, file_hash: file_hash)
   end
 
-  @spec create_changeset(String.t(), String.t()) :: Ecto.Changeset.t()
-  def create_changeset(filename, file_hash) do
+  @spec create_changeset(String.t(), String.t(), String.t()) :: Ecto.Changeset.t()
+  def create_changeset(filename, file_hash, content) do
     __struct__()
-    |> change(filename: filename, file_hash: file_hash)
+    |> change(filename: filename, file_hash: file_hash, content: content)
     |> validate()
   end
 
