@@ -22,7 +22,6 @@ defmodule SwiftCollections.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sftp_ex, "~> 0.2.6"},
       {:sftp_client, "~> 1.3"},
       {:ecto_sql, "~> 3.1.4"},
       {:myxql, "~> 0.2.9"}

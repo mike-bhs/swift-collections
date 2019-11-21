@@ -8,6 +8,7 @@ defmodule SwiftCollections.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
+      SwiftCollections.Repo
       # Starts a worker by calling: SwiftCollections.Worker.start_link(arg)
       # {SwiftCollections.Worker, arg}
     ]

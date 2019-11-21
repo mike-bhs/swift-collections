@@ -24,37 +24,25 @@ defmodule SwiftCollections.SftpFileDownloader do
     {:noreply, nil}
   end
 
-  def handle_info({:download_files, conn}, _) do
-    download_files(conn)
-
-    {:noreply, nil}
-  end
-
-  def handle_info({:save_file_content, filename, content}, _) do
-    save_file_content(filename, content)
-
-    {:noreply, nil}
-  end
-
   def process_sftp_files() do
     config = Application.get_env(:swift_collections, :sftp)
 
     case SFTPClient.connect(config) do
       {:ok, conn} ->
-        send(self(), {:download_files, conn})
+        process_files(conn)
+        SFTPClient.disconnect(conn)
 
       {:error, error} ->
         Logger.error("Failed to connect to SFTP #{inspect(error)}")
     end
 
-    Process.send_after(self(), :process_sftp_files, :timer.minutes(5))
+    Process.send_after(self(), :process_sftp_files, :timer.minutes(1))
   end
 
-  def download_files(conn) do
+  def process_files(conn) do
     case SFTPClient.list_dir(conn, @sftp_folder) do
       {:ok, filenames} ->
         Enum.each(filenames, &process_file(conn, &1))
-        SFTPClient.disconnect(conn)
 
       {:error, error} ->
         Logger.error("Failed to list directory content #{inspect(error)}")
@@ -62,22 +50,26 @@ defmodule SwiftCollections.SftpFileDownloader do
   end
 
   def process_file(conn, filename) do
+    archive_path = "#{@sftp_archive}/#{filename}"
     file_path = "#{@sftp_folder}/#{filename}"
 
-    case SFTPClient.read_file(conn, file_path) do
-      {:ok, content} ->
-        send(self(), {:save_file_content, filename, content})
+    with {:ok, content} <- SFTPClient.read_file(conn, file_path),
+         {:ok, download_record} <- save_file_content(filename, content) do
+      Logger.info("Successfully created download record #{download_record.id}")
 
-        archive_path = "#{@sftp_archive}/#{filename}"
-        move_file(conn, file_path, archive_path)
+      archive_file(conn, file_path, archive_path)
+    else
+      {:error, :duplicate_record, hash} ->
+        Logger.error("Found duplicate record with hash #{hash}")
+        archive_file(conn, file_path, archive_path)
 
       {:error, error} ->
-        Logger.error("Failed to read file conent #{inspect(error)}")
+        Logger.error("Failed to process file #{inspect(error)}")
     end
   end
 
-  def move_file(conn, old_path, new_path) do
-    case SFTPClient.rename(conn, old_path, new_path) do
+  def archive_file(conn, file_path, archive_path) do
+    case SFTPClient.rename(conn, file_path, archive_path) do
       :ok ->
         nil
 
@@ -88,11 +80,9 @@ defmodule SwiftCollections.SftpFileDownloader do
 
   def save_file_content(filename, content) do
     try do
-      DownloadRecords.Create.find_or_create(filename, content)
+      DownloadRecords.Create.create(filename, content)
     rescue
-      error ->
-        # TODO add retry mechanism
-        Logger.error("Failed to create download record due to exception: #{inspect(error)}")
+      error -> {:error, error}
     end
   end
 end

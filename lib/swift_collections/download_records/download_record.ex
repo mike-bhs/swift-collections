@@ -13,10 +13,10 @@ defmodule SwiftCollections.DownloadRecords.DownloadRecord do
   @primary_key {:id, SwiftCollections.EctoTypes.UUID, autogenerate: true}
 
   schema "download_records" do
-    field :filename, :string
-    field :file_hash, :string
+    field(:filename, :string)
+    field(:file_hash, :string)
 
-    timestamps inserted_at: :created_at
+    timestamps(inserted_at: :created_at)
   end
 
   @spec find_by_name_and_hash(String.t(), String.t()) :: t() | nil
@@ -33,7 +33,7 @@ defmodule SwiftCollections.DownloadRecords.DownloadRecord do
 
   defp validate(changeset) do
     changeset
-    |> validate_required([:free_text, :digest])
+    |> validate_required([:filename, :file_hash])
     |> unique_constraint(:filename_and_file_hash, name: :filename_and_file_hash_index)
   end
 end
