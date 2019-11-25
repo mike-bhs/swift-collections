@@ -18,8 +18,10 @@ defmodule SwiftCollections.SftpFileDownloader do
     {:ok, nil}
   end
 
-  def handle_info(:process_sftp_files, _) do
+  def handle_info(:download_files, _) do
     download_files()
+
+    Process.send_after(self(), :download_files, :timer.minutes(1))
 
     {:noreply, nil}
   end
@@ -37,8 +39,6 @@ defmodule SwiftCollections.SftpFileDownloader do
       {:error, error} ->
         Logger.error("Failed to download files form SFTP #{inspect(error)}")
     end
-
-    Process.send_after(self(), :process_sftp_files, :timer.minutes(1))
   end
 
   def process_file(conn, filename) do
