@@ -67,7 +67,9 @@ defmodule SwiftCollections.SftpFileDownloader do
         :ok
 
       {:error, error} ->
-        Logger.error("Failed to rename file #{inspect(error)}")
+        Logger.error("Failed to archive file #{inspect(error)}")
+
+        {:error, error}
     end
   end
 end
